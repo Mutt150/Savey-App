@@ -615,6 +615,17 @@ export default function SettingsPage() {
                         ))}
                     </div>
                 </div>
+
+                <hr className="border-purple-50" />
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <label className="flex items-center gap-2 text-sm font-extrabold text-purple-900"><Bell size={18} className="text-purple-500" /> Pengingat Harian</label>
+                        <p className="text-xs font-semibold text-purple-400 mt-1">Terima notifikasi pengingat di latar belakang.</p>
+                    </div>
+                    <button onClick={handleToggleNotification} className={`w-12 h-6 rounded-full p-1 shrink-0 transition-colors duration-300 ${dailyReminder ? "bg-purple-500" : "bg-purple-200"}`}>
+                        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${dailyReminder ? "translate-x-6" : "translate-x-0"}`} />
+                    </button>
+                </div>
             </div>
         </div>
     );

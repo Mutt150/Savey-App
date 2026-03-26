@@ -77,7 +77,7 @@ function DashboardContent() {
     const income = transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
     const expense = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 
-    // Fetch AI Insight
+    // Fetch AI Insight dengan Caching
     useEffect(() => {
         const fetchAIInsight = async () => {
             if (income === 0 && expense === 0 && !isLoadingData) {
@@ -88,6 +88,30 @@ function DashboardContent() {
 
             setIsLoadingInsight(true);
             try {
+                const targetDate = monthParam ? new Date(`${monthParam}-01T00:00:00`) : new Date();
+                const currentMonthKey = `${targetDate.getFullYear()}-${targetDate.getMonth() + 1}`;
+                const todayKey = new Date().toISOString().split('T')[0];
+                const persona = localStorage.getItem("savey_ai_persona") || "ramah";
+                
+                // Gunakan kombinasi transaksi_count + income + expense + persona sebagai "Fingerprint" cache
+                const cacheFingerprint = `${transactions.length}_${income}_${expense}_${persona}`;
+                const cacheKey = `savey_ai_insight_${currentMonthKey}`;
+                const cachedDataStr = localStorage.getItem(cacheKey);
+
+                if (cachedDataStr) {
+                    const cachedData = JSON.parse(cachedDataStr);
+                    if (cachedData.date === todayKey && cachedData.fingerprint === cacheFingerprint) {
+                        let icon = Sparkles;
+                        let color = "#a855f7";
+                        if (cachedData.status === "warning") { icon = AlertCircle; color = "#f43f5e"; }
+                        else if (cachedData.status === "positive") { icon = TrendingUp; color = "#10b981"; }
+                        
+                        setAiTip({ text: cachedData.text, icon, color });
+                        setIsLoadingInsight(false);
+                        return;
+                    }
+                }
+
                 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
                 if (!apiKey) throw new Error("API Key tidak ditemukan di environment.");
 
@@ -97,14 +121,12 @@ function DashboardContent() {
                     pemasukan: income,
                     pengeluaran: expense,
                     transaksiTerbaru: transactions.slice(0, 10).map(t => ({
-                        // Menggunakan getCat agar kategori kustom terbaca namanya oleh AI (bukan nampil ID custom_123)
                         kategori: getCat(t.category).label,
                         tipe: t.type,
                         nominal: t.amount
                     }))
                 };
 
-                const persona = localStorage.getItem("savey_ai_persona") || "ramah";
                 let personaPrompt = "ramah, suportif, dan memberi semangat";
                 if (persona === "sarkas") {
                     personaPrompt = "galak, sarkastik, ceplas-ceplos, suka menyindir, dan memarahi dengan gaya lucu (roasting) jika pengguna terlalu boros pengeluarannya";
@@ -141,7 +163,6 @@ function DashboardContent() {
                 
                 if (!textResult) throw new Error("Hasil AI kosong dari Google");
                 
-                // Membersihkan markdown backticks dari Gemini agar JSON bisa di-parse tanpa error
                 textResult = textResult.replace(/```json/gi, '').replace(/```/g, '').trim();
                 const parsed = JSON.parse(textResult);
 
@@ -152,6 +173,14 @@ function DashboardContent() {
                 else if (parsed.status === "positive") { icon = TrendingUp; color = "#10b981"; }
 
                 setAiTip({ text: parsed.text, icon, color });
+
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    text: parsed.text,
+                    status: parsed.status,
+                    fingerprint: cacheFingerprint,
+                    date: todayKey
+                }));
+
             } catch (error) {
                 console.error("🔥 Error AI Insight:", error);
                 setAiTip({ text: "Pengeluaran terpantau aman. Pantau terus arus kas kamu!", icon: Sparkles, color: "#a855f7" });
@@ -161,11 +190,10 @@ function DashboardContent() {
         };
 
         if (!query && !isLoadingData) fetchAIInsight();
-    }, [income, expense, query, isLoadingData, transactions]);
+    }, [income, expense, query, isLoadingData, transactions, monthParam]); // Tambahkan monthParam di dependency
 
     const filteredTransactions = query 
         ? transactions.filter(t => {
-            // Fitur Search sekarang mendukung kategori kustom
             const catLabel = getCat(t.category).label.toLowerCase();
             return t.note?.toLowerCase().includes(query) || catLabel.includes(query) || t.amount.toString().includes(query);
           })
@@ -206,7 +234,6 @@ function DashboardContent() {
                     <p className="text-sm font-bold text-purple-400">Belum ada transaksi di bulan ini.</p>
                 </div>
             ) : filteredTransactions.length === 0 && query ? (
-                // Tampilan kosong saat data tidak ditemukan di pencarian (Search)
                 <div className="text-center py-10 px-4">
                     <p className="text-sm font-bold text-purple-400">Tidak ada transaksi yang cocok dengan "{query}".</p>
                 </div>
