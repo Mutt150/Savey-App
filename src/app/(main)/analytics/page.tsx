@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
                     if (tx.type === 'expense') monthlyMap[monthKey].expense += tx.amount;
                 });
 
-                const formattedMonthly = Object.entries(monthlyMap)
+                const formattedMonthly = [...Object.entries(monthlyMap)]
                     .map(([key, data]) => {
                         const [year, month] = key.split('-');
                         const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -352,7 +352,7 @@ export default function AnalyticsPage() {
                                         <ClipboardList size={16} className="text-purple-500" /> Rincian Kategori
                                     </p>
                                     <div className="flex flex-col gap-4">
-                                        {pieData.sort((a, b) => b.value - a.value).map((item) => {
+                                        {[...pieData].sort((a, b) => b.value - a.value).map((item) => {
                                             const pct = Math.round((item.value / totalExpense) * 100);
                                             const Icon = item.icon;
                                             return (
