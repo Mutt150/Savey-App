@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import SummaryCards from "../../../components/dashboard/SummaryCards";
 import TransactionList from "../../../components/dashboard/TransactionList";
 import type { Transaction } from "../../../components/dashboard/TransactionList";
@@ -8,7 +8,7 @@ import { getCat } from "../../../lib/utils";
 import { supabase } from "../../../lib/supabase"; 
 import { useSearchParams } from "next/navigation";
 
-export default function DashboardPage() {
+function DashboardContent() {
     const searchParams = useSearchParams();
     const query = searchParams ? searchParams.get("q")?.toLowerCase() || "" : "";
     const monthParam = searchParams ? searchParams.get("month") : null;
@@ -214,5 +214,17 @@ export default function DashboardPage() {
                 <TransactionList transactions={filteredTransactions} />
             )}
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex justify-center items-center py-10">
+                <Loader2 className="animate-spin text-purple-400" size={32} />
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }

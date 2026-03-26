@@ -1,10 +1,10 @@
 "use client";
 import { Bell, Search, Wallet, ChevronDown, X, Sparkles, AlertTriangle, Calendar, Info } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function TopBar() {
+function TopBarContent() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -175,5 +175,13 @@ export default function TopBar() {
                 </div>
             )}
         </header>
+    );
+}
+
+export default function TopBar() {
+    return (
+        <Suspense fallback={<header className="px-4 pt-6 pb-2 sticky top-0 z-40 bg-[#fdf8f0]/90 backdrop-blur-md border-b border-purple-100 min-h-[72px]"></header>}>
+            <TopBarContent />
+        </Suspense>
     );
 }

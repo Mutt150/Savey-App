@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { formatRupiah, getCat } from "@/lib/utils";
 import { ArrowLeft, Printer, Wallet, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 
-export default function ReportPreviewPage() {
+function ReportPreviewContent() {
     const searchParams = useSearchParams();
     const monthParam = searchParams ? searchParams.get("month") : null;
 
@@ -202,5 +202,17 @@ export default function ReportPreviewPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function ReportPreviewPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f3e8ff" }}>
+                <Loader2 size={32} className="animate-spin text-purple-500" />
+            </div>
+        }>
+            <ReportPreviewContent />
+        </Suspense>
     );
 }
